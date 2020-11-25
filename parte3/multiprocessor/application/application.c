@@ -21,58 +21,82 @@
 #include <string.h>
 #include "simulatorIntercepts.h"
 
-#define NUM_VALUES 35
+
+
+#define num_processors 3 //número de núcleos escravos
+#define tam_vet 11 //tamanho do vetor de numeros randomicos
+
 
 static volatile int flag = 0;
-static volatile int fibres = 0;
+static volatile int print = 0;
 
-int fib(int i) {
-    return (i>1) ? fib(i-1) + fib(i-2) : i;
-}
 
-int munge(int mungeIn) {
+static volatile long vet[tam_vet];//vetor para os números randomicos
+static volatile double matriz[tam_vet][3];//matriz para armazenar o número a zaiz quadrada dele e o thread de calculo
 
-    int result = 0;
-    int i;
 
-    for(i=0; i<mungeIn; i++) {
-        result += i;
-    }
-    return result;
-}
+static volatile long operacoes; //numero de operçoes para cada processador
 
-int writer(int id) {
+int master(int id){
 
     int i;
-
-    for(i=0; i<NUM_VALUES; i++) {
-        int result = fib(i);
-        while(flag) {}
-        printf("CPU %d: fib(%d) = %d\n", id, i, result);
-        fibres = result;
-        flag = (i==(NUM_VALUES-1)) ? 2 : 1;
-    }
-
     while(flag) {}
+    operacoes = tam_vet/num_processors;
+
+    for(i=0; i<tam_vet; i++) {//for para criar os némeros randomicos
+        vet[i] = rand() % 1000000;//adiciona os números randomicos no vertor
+    }
+
+    flag = 1;
+    while(print!=num_processors){}
+
+    printf("\n Tabela com raiz quadrada dos numeros \n");
+    for(i=0; i<tam_vet; i++) {//mostra os o valor inicial, a raiz desse valor e a thred que executou
+        printf("        %.0f - %.4f - %.0f \n", matriz[i][0], matriz[i][1], matriz[i][2]);
+    }
+
+    flag = 0;
+    return 1;
+}
+
+int slave(int id){
+    
+
+    while(!flag) {}
+
+    int i;
+    int indice = (id-1)*operacoes;
+    long valor;
+    long resto = 0; // variavel usada para realizra todos os calculos do vetor se (tam_vet % num_processors) != 0
+    if(id == num_processors){
+        resto = (tam_vet - (operacoes * num_processors));
+    }
+    for(i=0; i<(operacoes+resto); i++){
+        valor = vet[indice+i];
+
+        double x1;
+        double x2, w1, w2;
+        x1=valor/2;
+        x2=((x1+(valor/x1))/2);
+        do{
+            w1 = x2;
+            x1=x2;
+            x2=((x1+(valor/x1))/2);
+            w2 = x2;
+        }while(w1 != w2);
+        
+        matriz[indice+i][0] = vet[indice+i];//salva o valor do vetor na matrix
+        matriz[indice+i][1] = x2;
+        matriz[indice+i][2] = id;
+    }
+
+    print++;
+    while(flag){}
 
     return 1;
 }
 
-int reader(int id) {
 
-    int done = 0;
-
-    do {
-        int mungeIn;
-        while(!flag) {}
-        mungeIn = fibres;
-        done    = (flag==2);
-        printf("CPU %d: munge(%d) = %d\n", id, mungeIn, munge(mungeIn));
-        flag    = 0;
-    } while(!done);
-
-    return 1;
-}
 
 int main(int argc, char **argv) {
 
@@ -80,18 +104,10 @@ int main(int argc, char **argv) {
 
     printf("CPU %d starting...\n", id);
 
-    switch(id) {
-
-        case 0:
-            writer(id);
-            break;
-
-        case 1:
-            reader(id);
-            break;
-
-        case 2:
-            break;
+    if(id == 0){
+        master(id);
+    }else{
+        slave(id);
     }
 
     return 1;
