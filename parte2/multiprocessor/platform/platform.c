@@ -99,8 +99,8 @@ int main(int argc, char ** argv) {
     // (so that each processor sees application symbols and has the correct
     // start address)
     if(
-        !icmLoadProcessorMemory(processor0, "C:/Users/andre/Desktop/Util/multiprocessor/application/application.OR1K.elf", False, False, True) ||
-        !icmLoadProcessorMemory(processor1, "C:/Users/andre/Desktop/Util/multiprocessor/application/application.OR1K.elf", False, False, True)
+        !icmLoadProcessorMemory(processor0, "C:/Users/andre/Desktop/SE/parte2/multiprocessor/application/application.OR1K.elf", False, False, True) ||
+        !icmLoadProcessorMemory(processor1, "C:/Users/andre/Desktop/SE/parte2/multiprocessor/application/application.OR1K.elf", False, False, True)
     ) {
         return -1;
     }

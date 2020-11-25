@@ -21,56 +21,77 @@
 #include <string.h>
 #include "simulatorIntercepts.h"
 
-#define NUM_VALUES 35
+#define NUM_VALUES 34
 
 static volatile int flag = 0;
+static volatile int flag1 = 0; 
 static volatile int fibres = 0;
-
+static volatile int flagend =0;
+static volatile int num;
+static volatile int proc;
 int fib(int i) {
     return (i>1) ? fib(i-1) + fib(i-2) : i;
 }
 
-int munge(int mungeIn) {
+int par(int id) {
 
-    int result = 0;
     int i;
 
-    for(i=0; i<mungeIn; i++) {
-        result += i;
+    for(i=0; i<NUM_VALUES; i=i+2) {
+        int result = fib(i);
+      
+        while(flag1){}
+        
+        while(flag) {}
+    
+        fibres = result;
+        num = i;
+        proc = id;
+        flag = (i==(NUM_VALUES-1)) ? 2 : 1;
+        flag1 = 1;
+      
     }
-    return result;
+
+    while(!flagend){}
+    return 1;
+}
+
+int impar(int id) {
+
+    int i;
+
+    for(i=1; i<NUM_VALUES; i=i+2) {
+        int result = fib(i);
+      
+        while(!flag1){}
+      
+        while(flag) {}
+       
+        fibres = result;
+        num = i;
+        proc = id;
+        flag1 = (i==(NUM_VALUES-1)) ? 2 : 0;;
+        flag = 1;
+
+    }
+ 
+    while(!flagend){}
+    return 1;
 }
 
 int writer(int id) {
 
-    int i;
-
-    for(i=0; i<NUM_VALUES; i++) {
-        int result = fib(i);
-        while(flag) {}
-        printf("CPU %d: fib(%d) = %d\n", id, i, result);
-        fibres = result;
-        flag = (i==(NUM_VALUES-1)) ? 2 : 1;
-    }
-
-    while(flag) {}
-
-    return 1;
-}
-
-int reader(int id) {
-
-    int done = 0;
-
-    do {
-        int mungeIn;
+    int done =0;
+    int done1 =0;
+    do { 
+        
         while(!flag) {}
-        mungeIn = fibres;
-        done    = (flag==2);
-        printf("CPU %d: munge(%d) = %d\n", id, mungeIn, munge(mungeIn));
-        flag    = 0;
-    } while(!done);
-
+            done = (flag==2);
+            done1 = (flag1==2);
+            printf("CPU(%d)fib(%d) = %d\n",proc ,num, fibres);
+            flag    = 0;            
+    } while(!done && !done1);
+    flagend = 1;
     return 1;
 }
 
@@ -87,10 +108,11 @@ int main(int argc, char **argv) {
             break;
 
         case 1:
-            reader(id);
+            par(id);
             break;
 
         case 2:
+            impar(id);
             break;
     }
 
