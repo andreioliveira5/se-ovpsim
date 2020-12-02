@@ -24,7 +24,7 @@
 
 
 #define num_processors 3 //número de núcleos escravos
-#define tam_vet 11 //tamanho do vetor de numeros randomicos
+#define tam_vet 100 //tamanho do vetor de numeros randomicos
 
 
 static volatile int flag = 0;
